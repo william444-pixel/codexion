@@ -61,16 +61,24 @@ int	request_dongle(t_coder *coder, t_dongle *dongle)
 	return (0);
 }
 
+static void	push_both_dongles(t_coder *coder, t_dongle *first, t_dongle *second)
+{
+	long long	key;
+
+	key = get_dongle_key(coder);
+	pthread_mutex_lock(&first->lock);
+	pthread_mutex_lock(&second->lock);
+	pq_push(&first->pq, coder, key);
+	pq_push(&second->pq, coder, key);
+	pthread_mutex_unlock(&first->lock);
+	pthread_mutex_unlock(&second->lock);
+}
+
 int	take_dongles(t_coder *coder)
 {
 	if (coder->id == coder->sim->nb_coders)
 	{
-		pthread_mutex_lock(&coder->right_dongle->lock);
-		pthread_mutex_lock(&coder->left_dongle->lock);
-		pq_push(&coder->right_dongle->pq, coder, get_dongle_key(coder));
-		pq_push(&coder->left_dongle->pq, coder, get_dongle_key(coder));
-		pthread_mutex_unlock(&coder->right_dongle->lock);
-		pthread_mutex_unlock(&coder->left_dongle->lock);
+		push_both_dongles(coder, coder->right_dongle, coder->left_dongle);
 		if (request_dongle(coder, coder->right_dongle))
 			return (1);
 		if (request_dongle(coder, coder->left_dongle))
@@ -78,12 +86,7 @@ int	take_dongles(t_coder *coder)
 	}
 	else
 	{
-		pthread_mutex_lock(&coder->left_dongle->lock);
-		pthread_mutex_lock(&coder->right_dongle->lock);
-		pq_push(&coder->left_dongle->pq, coder, get_dongle_key(coder));
-		pq_push(&coder->right_dongle->pq, coder, get_dongle_key(coder));
-		pthread_mutex_unlock(&coder->left_dongle->lock);
-		pthread_mutex_unlock(&coder->right_dongle->lock);
+		push_both_dongles(coder, coder->left_dongle, coder->right_dongle);
 		if (request_dongle(coder, coder->left_dongle))
 			return (1);
 		if (request_dongle(coder, coder->right_dongle))
