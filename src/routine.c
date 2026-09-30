@@ -1,65 +1,89 @@
 #include "../include/codexion.h"
 
-void	wait_for_cooldown(t_dongle *dongle, t_sim *sim)
+long long	get_dongle_key(t_coder *coder)
 {
-	long long	now;
+	long long	deadline;
 
-	now = get_time_ms();
-	if (now < dongle->available_at)
-	{
-		custom_sleep(dongle->available_at - now, sim);
-	}
-}
-
-void	apply_edf(t_coder *coder)
-{
-	long long	my_dl;
-	long long	l_dl;
-	long long	r_dl;
-	long long	t_burn;
-
-	if (coder->sim->scheduler != SIM_EDF)
-		return ;
+	if (coder->sim->scheduler == SIM_FIFO)
+		return (get_time_ms());
 	pthread_mutex_lock(&coder->sim->sim_lock);
-	t_burn = coder->sim->time_to_burnout;
-	my_dl = coder->last_compile_start + t_burn;
-	l_dl = coder->left_neighbor->last_compile_start + t_burn;
-	r_dl = coder->right_neighbor->last_compile_start + t_burn;
+	deadline = coder->last_compile_start + coder->sim->time_to_burnout;
 	pthread_mutex_unlock(&coder->sim->sim_lock);
-	if (l_dl < my_dl || r_dl < my_dl)
-		usleep(500);
+	return (deadline);
 }
 
-void	take_dongles(t_coder *coder)
+int	can_take_dongle(t_dongle *dongle, t_coder *coder)
 {
-	apply_edf(coder);
+	if (dongle->taken == 1)
+		return (0);
+	if (get_time_ms() < dongle->available_at)
+		return (0);
+	if (dongle->pq.size > 0 && dongle->pq.nodes[0].coder->id != coder->id)
+		return (0);
+	return (1);
+}
+
+int	request_dongle(t_coder *coder, t_dongle *dongle)
+{
+	long long	key;
+
+	key = get_dongle_key(coder);
+	pthread_mutex_lock(&dongle->lock);
+	pq_push(&dongle->pq, coder, key);
+	while (1)
+	{
+		pthread_mutex_lock(&coder->sim->sim_lock);
+		if (coder->sim->stop_flag)
+		{
+			pthread_mutex_unlock(&coder->sim->sim_lock);
+			pthread_mutex_unlock(&dongle->lock);
+			return (1);
+		}
+		pthread_mutex_unlock(&coder->sim->sim_lock);
+		if (can_take_dongle(dongle, coder))
+			break ;
+		pthread_mutex_unlock(&dongle->lock);
+		usleep(500);
+		pthread_mutex_lock(&dongle->lock);
+	}
+	dongle->taken = 1;
+	pq_pop(&dongle->pq);
+	pthread_mutex_unlock(&dongle->lock);
+	print_status(coder, "has taken a dongle");
+	return (0);
+}
+
+int	take_dongles(t_coder *coder)
+{
 	if (coder->id == coder->sim->nb_coders)
 	{
-		pthread_mutex_lock(&coder->right_dongle->lock);
-		wait_for_cooldown(coder->right_dongle, coder->sim);
-		print_status(coder, "has taken a dongle");
-		pthread_mutex_lock(&coder->left_dongle->lock);
-		wait_for_cooldown(coder->left_dongle, coder->sim);
-		print_status(coder, "has taken a dongle");
+		if (request_dongle(coder, coder->right_dongle))
+			return (1);
+		if (request_dongle(coder, coder->left_dongle))
+			return (1);
 	}
 	else
 	{
-		pthread_mutex_lock(&coder->left_dongle->lock);
-		wait_for_cooldown(coder->left_dongle, coder->sim);
-		print_status(coder, "has taken a dongle");
-		pthread_mutex_lock(&coder->right_dongle->lock);
-		wait_for_cooldown(coder->right_dongle, coder->sim);
-		print_status(coder, "has taken a dongle");
+		if (request_dongle(coder, coder->left_dongle))
+			return (1);
+		if (request_dongle(coder, coder->right_dongle))
+			return (1);
 	}
+	return (0);
 }
 
 void	drop_dongles(t_coder *coder)
 {
-	long long	now;
+	long long	next_available;
 
-	now = get_time_ms();
-	coder->left_dongle->available_at = now + coder->sim->dongle_cooldown;
-	coder->right_dongle->available_at = now + coder->sim->dongle_cooldown;
+	next_available = get_time_ms() + coder->sim->dongle_cooldown;
+	pthread_mutex_lock(&coder->left_dongle->lock);
+	coder->left_dongle->taken = 0;
+	coder->left_dongle->available_at = next_available;
 	pthread_mutex_unlock(&coder->left_dongle->lock);
+	
+	pthread_mutex_lock(&coder->right_dongle->lock);
+	coder->right_dongle->taken = 0;
+	coder->right_dongle->available_at = next_available;
 	pthread_mutex_unlock(&coder->right_dongle->lock);
 }

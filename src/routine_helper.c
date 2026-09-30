@@ -31,7 +31,8 @@ void	*coder_routine(void *arg)
 	{
 		if (check_stop_or_single(coder))
 			break ;
-		take_dongles(coder);
+		if (take_dongles(coder))
+			break ;
 		print_status(coder, "is compiling");
 		pthread_mutex_lock(&coder->sim->sim_lock);
 		coder->last_compile_start = get_time_ms();
