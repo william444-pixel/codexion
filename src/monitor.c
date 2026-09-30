@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   monitor.c                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: nael-oua <nael-oua@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/09/30 16:54:00 by nael-oua          #+#    #+#             */
+/*   Updated: 2026/09/30 16:55:06 by nael-oua         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../include/codexion.h"
 
 int	check_all_compiled(t_sim *sim, t_coder *coders)
@@ -41,7 +53,8 @@ int	check_burnout(t_sim *sim, t_coder *coders)
 			sim->stop_flag = 1;
 			pthread_mutex_unlock(&sim->sim_lock);
 			pthread_mutex_lock(&sim->print_lock);
-			printf("%lld %d burned out\n", get_time_ms() - sim->start_time, coders[i].id);
+			printf("%lld %d burned out\n", \
+				get_time_ms() - sim->start_time, coders[i].id);
 			pthread_mutex_unlock(&sim->print_lock);
 			return (1);
 		}

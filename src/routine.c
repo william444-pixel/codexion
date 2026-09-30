@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   routine.c                                          :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: nael-oua <nael-oua@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/09/30 16:54:09 by nael-oua          #+#    #+#             */
+/*   Updated: 2026/09/30 17:07:40 by nael-oua         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../include/codexion.h"
 
 long long	get_dongle_key(t_coder *coder)
@@ -25,11 +37,7 @@ int	can_take_dongle(t_dongle *dongle, t_coder *coder)
 
 int	request_dongle(t_coder *coder, t_dongle *dongle)
 {
-	long long	key;
-
-	key = get_dongle_key(coder);
 	pthread_mutex_lock(&dongle->lock);
-	pq_push(&dongle->pq, coder, key);
 	while (1)
 	{
 		pthread_mutex_lock(&coder->sim->sim_lock);
@@ -57,6 +65,12 @@ int	take_dongles(t_coder *coder)
 {
 	if (coder->id == coder->sim->nb_coders)
 	{
+		pthread_mutex_lock(&coder->right_dongle->lock);
+		pthread_mutex_lock(&coder->left_dongle->lock);
+		pq_push(&coder->right_dongle->pq, coder, get_dongle_key(coder));
+		pq_push(&coder->left_dongle->pq, coder, get_dongle_key(coder));
+		pthread_mutex_unlock(&coder->right_dongle->lock);
+		pthread_mutex_unlock(&coder->left_dongle->lock);
 		if (request_dongle(coder, coder->right_dongle))
 			return (1);
 		if (request_dongle(coder, coder->left_dongle))
@@ -64,6 +78,12 @@ int	take_dongles(t_coder *coder)
 	}
 	else
 	{
+		pthread_mutex_lock(&coder->left_dongle->lock);
+		pthread_mutex_lock(&coder->right_dongle->lock);
+		pq_push(&coder->left_dongle->pq, coder, get_dongle_key(coder));
+		pq_push(&coder->right_dongle->pq, coder, get_dongle_key(coder));
+		pthread_mutex_unlock(&coder->left_dongle->lock);
+		pthread_mutex_unlock(&coder->right_dongle->lock);
 		if (request_dongle(coder, coder->left_dongle))
 			return (1);
 		if (request_dongle(coder, coder->right_dongle))
@@ -81,7 +101,6 @@ void	drop_dongles(t_coder *coder)
 	coder->left_dongle->taken = 0;
 	coder->left_dongle->available_at = next_available;
 	pthread_mutex_unlock(&coder->left_dongle->lock);
-	
 	pthread_mutex_lock(&coder->right_dongle->lock);
 	coder->right_dongle->taken = 0;
 	coder->right_dongle->available_at = next_available;

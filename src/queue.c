@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   queue.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: nael-oua <nael-oua@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/09/30 16:54:03 by nael-oua          #+#    #+#             */
+/*   Updated: 2026/09/30 17:00:48 by nael-oua         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../include/codexion.h"
 
 void	ft_swap(t_pq_node *a, t_pq_node *b)
@@ -9,7 +21,7 @@ void	ft_swap(t_pq_node *a, t_pq_node *b)
 	*b = temp;
 }
 
-void	 pq_push(t_pqueue *pq, t_coder *coder, long long key)
+void	pq_push(t_pqueue *pq, t_coder *coder, long long key)
 {
 	int	i;
 

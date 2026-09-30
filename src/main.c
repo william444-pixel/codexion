@@ -1,7 +1,18 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   main.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: nael-oua <nael-oua@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/09/30 16:47:02 by nael-oua          #+#    #+#             */
+/*   Updated: 2026/09/30 16:53:32 by nael-oua         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../include/codexion.h"
 
-
-int	check_args_numeric(char **argv)
+int	check_args_numeric(char **argv, t_sim *sim)
 {
 	int	i;
 
@@ -14,6 +25,11 @@ int	check_args_numeric(char **argv)
 			return (1);
 		}
 		i++;
+	}
+	if (sim->nb_compiles_req < 1)
+	{
+		printf("number of compiles must be at least 1\n");
+		return (1);
 	}
 	return (0);
 }
@@ -51,7 +67,7 @@ int	parse_arguments(int argc, char **argv, t_sim *sim)
 		printf("Error: Invalid number of arguments.\n");
 		return (1);
 	}
-	if (check_args_numeric(argv))
+	if (check_args_numeric(argv, sim))
 		return (1);
 	return (init_args_values(argv, sim));
 }
@@ -70,7 +86,8 @@ int	start_simulation(t_sim *sim, t_coder *coders)
 	while (++i < sim->nb_coders)
 	{
 		coders[i].last_compile_start = sim->start_time;
-		if (pthread_create(&coder_th[i], NULL, (void *)coder_routine, &coders[i]))
+		if (pthread_create(&coder_th[i], NULL, \
+			(void *)coder_routine, &coders[i]))
 			return (1);
 	}
 	if (pthread_create(&monitor_th, NULL, (void *)monitor_routine, coders))

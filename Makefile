@@ -3,13 +3,13 @@ NAME    = codexion
 CC      = cc
 CFLAGS  = -Wall -Wextra -Werror -pthread -I.
 
-SRCS    = main.c \
-          init.c \
-          utils.c \
-          routine.c \
-          routine_helper.c \
-          monitor.c \
-          queue.c
+SRCS    = src/main.c \
+          src/init.c \
+          src/utils.c \
+          src/routine.c \
+          src/routine_helper.c \
+          src/monitor.c \
+          src/queue.c
 
 OBJS    = $(SRCS:.c=.o)
 

@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   init.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: nael-oua <nael-oua@student.42.fr>          +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/09/30 16:45:40 by nael-oua          #+#    #+#             */
+/*   Updated: 2026/09/30 16:46:46 by nael-oua         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "../include/codexion.h"
 
 int	init_dongles(t_sim *sim)
@@ -36,7 +48,8 @@ t_coder	*init_coders(t_sim *sim)
 		coders[i].sim = sim;
 		coders[i].left_dongle = &sim->dongles[i];
 		coders[i].right_dongle = &sim->dongles[(i + 1) % sim->nb_coders];
-		coders[i].left_neighbor = &coders[(i + sim->nb_coders - 1) % sim->nb_coders];
+		coders[i].left_neighbor = \
+		&coders[(i + sim->nb_coders - 1) % sim->nb_coders];
 		coders[i].right_neighbor = &coders[(i + 1) % sim->nb_coders];
 		i++;
 	}
